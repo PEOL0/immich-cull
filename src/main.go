@@ -13,7 +13,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type AlbumStruct []struct {
+type AlbumListStruct []struct {
 	AlbumName             string    `json:"albumName"`
 	Description           string    `json:"description"`
 	AlbumThumbnailAssetID string    `json:"albumThumbnailAssetId"`
@@ -127,11 +127,11 @@ func main() {
 
 	getAlbumList()
 	getAlbumInfo("fmt.Println(PrettyPrint(result))")
-	//fmt.Printf("Api is: %s ", os.Getenv("ImmichAPI"))
+	//fmt.Printf("Api is: %s ", os.Getenv("ImmichKey"))
 
 }
 
-func getAlbumList() AlbumStruct {
+func getAlbumList() AlbumListStruct {
 	url := os.Getenv("ImmichURL") + "/api/albums"
 	method := "GET"
 
@@ -143,7 +143,7 @@ func getAlbumList() AlbumStruct {
 	}
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("x-api-key", os.Getenv("ImmichAPI"))
+	req.Header.Add("x-api-key", os.Getenv("ImmichKey"))
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -155,17 +155,17 @@ func getAlbumList() AlbumStruct {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(body))
+	//fmt.Println(string(body))
 
-	var result AlbumStruct
+	var result AlbumListStruct
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
-		fmt.Println("Can not unmarshal JSON")
+		log.Fatalf("Can not unmarshal JSON")
 	}
-	fmt.Println(PrettyPrint(result))
+	/*fmt.Println(PrettyPrint(result))
 
 	for i, a := range result {
 		fmt.Printf("[%d]  %s\n", i, a.AlbumName)
-	}
+	}*/
 	return result
 }
 
@@ -178,7 +178,7 @@ func PrettyPrint(i interface{}) string {
 }
 
 func getAlbumInfo(id string) AlbumInfo {
-	url := os.Getenv("ImmichURL") + "/api/albums/52ca089b-2d70-4d80-9f2a-c309f1da638a"
+	url := os.Getenv("ImmichURL") + "/api/albums/" + id
 	method := "GET"
 
 	client := &http.Client{}
@@ -188,7 +188,7 @@ func getAlbumInfo(id string) AlbumInfo {
 		log.Fatal(err)
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("x-api-key", os.Getenv("ImmichAPI"))
+	req.Header.Add("x-api-key", os.Getenv("ImmichKey"))
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -203,8 +203,12 @@ func getAlbumInfo(id string) AlbumInfo {
 
 	var result AlbumInfo
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
-		fmt.Println("Can not unmarshal JSON")
+		log.Fatalf("Can not unmarshal JSON")
 	}
-	fmt.Println(PrettyPrint(result))
+
+	if result.ID != id {
+		log.Fatal("Recived ID \"" + result.ID + "\" does'nt match excpected id \"" + id + "\"")
+	}
+	//fmt.Println(PrettyPrint(result))
 	return result
 }
