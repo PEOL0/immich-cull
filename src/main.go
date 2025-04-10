@@ -126,11 +126,12 @@ func main() {
 	}
 
 	albums := getAlbumList()
+
 	var selected int
 	fmt.Scanln(&selected)
 
-	getAlbumInfo(albums[selected].ID)
-	//fmt.Printf("Api is: %s ", os.Getenv("ImmichKey"))
+	albumInfo := getAlbumInfo(albums[selected].ID)
+	filterByFavourite(albumInfo)
 
 }
 
@@ -214,4 +215,16 @@ func getAlbumInfo(id string) AlbumInfo {
 	}
 	//fmt.Println(PrettyPrint(result))
 	return result
+}
+
+func filterByFavourite(album AlbumInfo) []string {
+	assets := album.Assets
+	var favouriteIDs []string
+	for _, a := range assets {
+		if a.IsFavorite {
+			favouriteIDs = append(favouriteIDs, a.ID)
+		}
+	}
+	//fmt.Println(favouriteIDs)
+	return favouriteIDs
 }
