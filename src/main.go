@@ -92,7 +92,7 @@ type AlbumInfo struct {
 			ModifyDate       time.Time `json:"modifyDate"`
 			TimeZone         any       `json:"timeZone"`
 			LensModel        string    `json:"lensModel"`
-			FNumber          int       `json:"fNumber"`
+			FNumber          float32   `json:"fNumber"`
 			FocalLength      int       `json:"focalLength"`
 			Iso              int       `json:"iso"`
 			ExposureTime     string    `json:"exposureTime"`
@@ -125,8 +125,11 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	getAlbumList()
-	getAlbumInfo("fmt.Println(PrettyPrint(result))")
+	albums := getAlbumList()
+	var selected int
+	fmt.Scanln(&selected)
+
+	getAlbumInfo(albums[selected].ID)
 	//fmt.Printf("Api is: %s ", os.Getenv("ImmichKey"))
 
 }
@@ -161,11 +164,11 @@ func getAlbumList() AlbumListStruct {
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
 		log.Fatalf("Can not unmarshal JSON")
 	}
-	/*fmt.Println(PrettyPrint(result))
+	//fmt.Println(PrettyPrint(result))
 
 	for i, a := range result {
 		fmt.Printf("[%d]  %s\n", i, a.AlbumName)
-	}*/
+	}
 	return result
 }
 
@@ -203,11 +206,11 @@ func getAlbumInfo(id string) AlbumInfo {
 
 	var result AlbumInfo
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
-		log.Fatalf("Can not unmarshal JSON")
+		log.Fatalf("Can not unmarshal JSON. Error message: %s", err)
 	}
 
 	if result.ID != id {
-		log.Fatal("Recived ID \"" + result.ID + "\" does'nt match excpected id \"" + id + "\"")
+		log.Fatal("Recived ID \"" + result.ID + "\" doesn't match excpected id \"" + id + "\"")
 	}
 	//fmt.Println(PrettyPrint(result))
 	return result
