@@ -14,6 +14,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Global mutex for duplicate file prompts
+var duplicatePromptMutex sync.Mutex
+
 type AlbumListStruct []struct {
 	AlbumName             string    `json:"albumName"`
 	Description           string    `json:"description"`
@@ -445,6 +448,39 @@ func downloadFavouriteAssets(path string, favouriteIDs []string) error {
 	return nil
 }
 
+func handleDuplicateFile(filename, path string) (string, bool) {
+	// Ensure only one prompt is shown at a time
+	duplicatePromptMutex.Lock()
+	defer duplicatePromptMutex.Unlock()
+
+	fmt.Printf("\nDuplicate file found: %s\n", filename)
+	fmt.Println("Choose an option:")
+	fmt.Println("1. Keep both files (add date prefix to new file)")
+	fmt.Println("2. Overwrite the existing file")
+	fmt.Println("3. (Default) Keep the existing file (skip download)")
+	fmt.Print("Enter your choice (1-3): ")
+
+	var choice int
+	fmt.Scanln(&choice)
+
+	switch choice {
+	case 1:
+		// Keep both - add timestamp prefix
+		timestamp := time.Now().Format("20060102-150405")
+		newFilePath := fmt.Sprintf("%s/%s-%s", path, timestamp, filename)
+		return newFilePath, true
+	case 2:
+		// Overwrite existing
+		return fmt.Sprintf("%s/%s", path, filename), true
+	case 3:
+		// Skip download
+		return "", false
+	default:
+		fmt.Println("Invalid choice. Defaulting to skip download.")
+		return "", false
+	}
+}
+
 func downloadAsset(id string, path string) error {
 	// Get asset info to retrieve the original filename
 	assetInfo, err := getAssetInfo(id)
@@ -457,9 +493,13 @@ func downloadAsset(id string, path string) error {
 	// Handle potential duplicate filenames
 	filePath := fmt.Sprintf("%s/%s", path, filename)
 	if _, err := os.Stat(filePath); err == nil {
-		// File exists - create unique name
-		timestamp := time.Now().Format("20060102-150405")
-		filePath = fmt.Sprintf("%s/%s-%s", path, timestamp, filename)
+		// File exists - prompt user for choice
+		newFilePath, shouldDownload := handleDuplicateFile(filename, path)
+		if !shouldDownload {
+			fmt.Printf("Skipped download of %s\n", filename)
+			return nil
+		}
+		filePath = newFilePath
 	}
 
 	url := os.Getenv("ImmichURL") + "/api/assets/" + id + "/original"
